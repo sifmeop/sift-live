@@ -1,0 +1,6 @@
+src/generated/prisma
+dist
+node_modules
+bun.lock
+*.log
+src/schema.gql
