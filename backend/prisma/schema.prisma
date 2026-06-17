@@ -16,8 +16,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  stream   Stream?
-  messages Message[]
+  stream    Stream?
+  messages  Message[]
+  sessions  Session[]
 }
 
 model Stream {
@@ -67,4 +68,19 @@ model Message {
 
   @@index([streamId])
   @@index([broadcastId])
+}
+
+model Session {
+  id                String   @id @default(cuid(2))
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String   @unique
+  userAgent         String?
+  ip                String?
+  createdAt         DateTime @default(now())
+  expiresAt         DateTime
+  revokedAt         DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
 }

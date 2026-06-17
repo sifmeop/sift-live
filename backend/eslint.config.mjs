@@ -51,18 +51,23 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-extraneous-class': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^_',
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
+      ],
 
       // Imports
       'import/order': 'off',
 
       'unused-imports/no-unused-imports': 'error',
-      'unused-imports/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
+      'unused-imports/no-unused-vars': 'off',
 
       // Code quality
       'sonarjs/cognitive-complexity': ['warn', 15],
@@ -70,10 +75,11 @@ export default tseslint.config(
 
       // NestJS safety
       '@darraghor/nestjs-typed/injectable-should-be-provided': 'error',
-      '@darraghor/nestjs-typed/module-boundaries': 'error',
+      // '@darraghor/nestjs-typed/module-boundaries': 'error',
 
       // Node style
-      'no-console': 'off',
+      'no-console': 0,
+      'prettier/prettier': 0,
     },
   },
 )

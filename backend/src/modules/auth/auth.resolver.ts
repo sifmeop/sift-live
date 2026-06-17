@@ -1,16 +1,19 @@
-import { UnauthorizedException } from '@nestjs/common'
+import { UseGuards } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Args, Context, Mutation, Resolver } from '@nestjs/graphql'
 
 import { AuthService } from './auth.service'
 import { Public } from './decorators/public.decorator'
+import { RefreshToken } from './decorators/refresh-token.decorator'
 import { LoginInput } from './dto/login.input'
 import { RegisterInput } from './dto/register.input'
 import { AuthResponse } from './entities/auth-response.entity'
 import { RefreshResponse } from './entities/refresh-response.entity'
-import { type GqlContext } from './interfaces/auth-context.interface'
+import { RefreshTokenGuard } from './guards/refresh-token.guard'
 import { Response } from 'express'
 import ms, { StringValue } from 'ms'
+import { type ClientInfo, GetClientInfo } from '~/common/decorators/client-info.decorator'
+import { type GqlContext } from '~/common/interfaces/gql-context.interface'
 import { EnvConfig } from '~/config/env.config'
 
 @Resolver()
@@ -35,37 +38,39 @@ export class AuthResolver {
 
   @Public()
   @Mutation(() => AuthResponse)
-  async login(@Args('input') input: LoginInput, @Context() ctx: GqlContext): Promise<AuthResponse> {
-    const { user, accessToken, refreshToken } = await this.authService.login(input)
+  async login(
+    @Args('input') input: LoginInput,
+    @Context() ctx: GqlContext,
+    @GetClientInfo() clientInfo: ClientInfo,
+  ): Promise<AuthResponse> {
+    const { user, accessToken, refreshToken } = await this.authService.login(input, clientInfo)
 
     this.setRefreshCookie(ctx.res, refreshToken)
 
     return { user, accessToken }
   }
 
+  @UseGuards(RefreshTokenGuard)
   @Mutation(() => Boolean)
-  async logout(@Context() ctx: GqlContext): Promise<boolean> {
-    const refreshToken = ctx.req.cookies['refreshToken']
-
-    if (refreshToken) {
-      await this.authService.logout(refreshToken)
-    }
+  async logout(@Context() ctx: GqlContext, @RefreshToken() refreshToken: string): Promise<boolean> {
+    await this.authService.logout(refreshToken)
 
     ctx.res.clearCookie('refreshToken')
 
     return true
   }
 
+  @UseGuards(RefreshTokenGuard)
   @Mutation(() => RefreshResponse)
-  async refresh(@Context() ctx: GqlContext): Promise<RefreshResponse> {
-    const refreshToken = ctx.req.cookies['refreshToken']
-
-    if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token missing')
-    }
-
-    const { accessToken, refreshToken: newRefreshToken } =
-      await this.authService.refresh(refreshToken)
+  async refresh(
+    @Context() ctx: GqlContext,
+    @RefreshToken() refreshToken: string,
+    @GetClientInfo() clientInfo: ClientInfo,
+  ): Promise<RefreshResponse> {
+    const { accessToken, refreshToken: newRefreshToken } = await this.authService.refresh(
+      refreshToken,
+      clientInfo,
+    )
 
     this.setRefreshCookie(ctx.res, newRefreshToken)
 

@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config'
 
-import ms, { StringValue } from 'ms'
+import ms, { type StringValue } from 'ms'
 import { z } from 'zod'
 
 const ttlSchema = z.string().refine(
@@ -25,6 +25,8 @@ const envSchema = z.object({
 
   JWT_ACCESS_SECRET: z.string(),
   JWT_ACCESS_TTL: ttlSchema,
+  JWT_ACCESS_ISSUER: z.string(),
+  JWT_ACCESS_AUDIENCE: z.string(),
 
   JWT_REFRESH_TTL: ttlSchema,
 })

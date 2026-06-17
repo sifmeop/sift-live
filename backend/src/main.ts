@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 
 import { AppModule } from './app.module'
-import { EnvConfig } from './config/env.config'
+import type { EnvConfig } from './config/env.config'
 import cookieParser from 'cookie-parser'
 
 async function bootstrap() {
