@@ -6,6 +6,12 @@
       "sourceType": "autoskills-registry",
       "computedHash": "1386ed5490ed278e38312a416c9aa074dbe3849f32ae7f841e4142fef5d4df94"
     },
+    "class-validator": {
+      "source": "claude-dev-suite/claude-dev-suite",
+      "sourceType": "github",
+      "skillPath": "skills/validation/class-validator/SKILL.md",
+      "computedHash": "920fa2b6f99bccdab2216bdb2e72be330efc124caff62e7243edaff2bb490ab3"
+    },
     "jwt-security": {
       "source": "mindrally/skills",
       "sourceType": "github",

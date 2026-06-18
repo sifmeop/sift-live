@@ -14,10 +14,18 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
-    "\n  query Public {\n    public\n  }\n": typeof types.PublicDocument,
+    "\n  mutation Login($input: LoginInput!) {\n    login(input: $input) {\n      accessToken\n      user {\n        id\n        email\n        username\n      }\n    }\n  }\n": typeof types.LoginDocument,
+    "\n  mutation Register($input: RegisterInput!) {\n    register(input: $input) {\n      accessToken\n      user {\n        id\n        email\n        username\n      }\n    }\n  }\n": typeof types.RegisterDocument,
+    "\n  mutation Logout {\n    logout\n  }\n": typeof types.LogoutDocument,
+    "\n  query Me {\n    me {\n      id\n      email\n      username\n    }\n  }\n": typeof types.MeDocument,
+    "\n  mutation Refresh {\n    refresh {\n      accessToken\n    }\n  }\n": typeof types.RefreshDocument,
 };
 const documents: Documents = {
-    "\n  query Public {\n    public\n  }\n": types.PublicDocument,
+    "\n  mutation Login($input: LoginInput!) {\n    login(input: $input) {\n      accessToken\n      user {\n        id\n        email\n        username\n      }\n    }\n  }\n": types.LoginDocument,
+    "\n  mutation Register($input: RegisterInput!) {\n    register(input: $input) {\n      accessToken\n      user {\n        id\n        email\n        username\n      }\n    }\n  }\n": types.RegisterDocument,
+    "\n  mutation Logout {\n    logout\n  }\n": types.LogoutDocument,
+    "\n  query Me {\n    me {\n      id\n      email\n      username\n    }\n  }\n": types.MeDocument,
+    "\n  mutation Refresh {\n    refresh {\n      accessToken\n    }\n  }\n": types.RefreshDocument,
 };
 
 /**
@@ -37,7 +45,23 @@ export function graphql(source: string): unknown;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query Public {\n    public\n  }\n"): (typeof documents)["\n  query Public {\n    public\n  }\n"];
+export function graphql(source: "\n  mutation Login($input: LoginInput!) {\n    login(input: $input) {\n      accessToken\n      user {\n        id\n        email\n        username\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation Login($input: LoginInput!) {\n    login(input: $input) {\n      accessToken\n      user {\n        id\n        email\n        username\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation Register($input: RegisterInput!) {\n    register(input: $input) {\n      accessToken\n      user {\n        id\n        email\n        username\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation Register($input: RegisterInput!) {\n    register(input: $input) {\n      accessToken\n      user {\n        id\n        email\n        username\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation Logout {\n    logout\n  }\n"): (typeof documents)["\n  mutation Logout {\n    logout\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query Me {\n    me {\n      id\n      email\n      username\n    }\n  }\n"): (typeof documents)["\n  query Me {\n    me {\n      id\n      email\n      username\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation Refresh {\n    refresh {\n      accessToken\n    }\n  }\n"): (typeof documents)["\n  mutation Refresh {\n    refresh {\n      accessToken\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

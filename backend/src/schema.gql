@@ -10,7 +10,6 @@ type AuthResponse {
 input LoginInput {
   email: String!
   password: String!
-  username: String
 }
 
 type Mutation {
@@ -21,6 +20,7 @@ type Mutation {
 }
 
 type Query {
+  me: User!
   public: String!
 }
 

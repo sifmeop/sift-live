@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 
 import { RedisService } from '../redis/redis.service'
+import { User } from '../user/entities/user.entity'
 import { UserService } from '../user/user.service'
 import { LoginInput } from './dto/login.input'
 import { RegisterInput } from './dto/register.input'
@@ -24,10 +25,17 @@ export class AuthService {
   ) {}
 
   async register(input: RegisterInput) {
-    const isExist = await this.userService.findByEmail(input.email)
+    const [existingEmail, existingUsername] = await Promise.all([
+      this.userService.findByEmail(input.email),
+      this.userService.findByUsername(input.username),
+    ])
 
-    if (isExist) {
-      throw new BadRequestException('User already exists')
+    if (existingEmail) {
+      throw new BadRequestException('Email is already registered')
+    }
+
+    if (existingUsername) {
+      throw new BadRequestException('Username is already taken')
     }
 
     const newUser = await this.userService.create(input.email, input.password, input.username)
@@ -37,6 +45,18 @@ export class AuthService {
     const tokens = await this.signTokens(newUser.id, newUser.email, {})
 
     return { user: safeUser, ...tokens }
+  }
+
+  async getCurrentUser(userId: string): Promise<User> {
+    const user = await this.userService.findById(userId)
+
+    if (!user) {
+      throw new UnauthorizedException('User not found')
+    }
+
+    const { password: _, ...safeUser } = user
+
+    return safeUser
   }
 
   async login(input: LoginInput, clientInfo: ClientInfo) {

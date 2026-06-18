@@ -11,6 +11,14 @@ export class UserService {
     return this.prismaService.user.findUnique({ where: { email } })
   }
 
+  async findByUsername(username: string) {
+    return this.prismaService.user.findUnique({ where: { username } })
+  }
+
+  async findById(id: string) {
+    return this.prismaService.user.findUnique({ where: { id } })
+  }
+
   async create(email: string, password: string, username: string) {
     const hashedPassword = await hash(password)
 

@@ -1,12 +1,20 @@
-import { Field, InputType, PartialType } from '@nestjs/graphql'
+import { Field, InputType } from '@nestjs/graphql'
 
-import { RegisterInput } from './register.input'
+import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator'
+import { ToLower, Trim } from '~/common/decorators/normalize.decorators'
 
 @InputType()
-export class LoginInput extends PartialType(RegisterInput) {
+export class LoginInput {
   @Field()
+  @Trim()
+  @IsEmail()
+  @MaxLength(254)
+  @ToLower()
   email!: string
 
   @Field()
+  @Trim()
+  @IsString()
+  @MinLength(1)
   password!: string
 }
