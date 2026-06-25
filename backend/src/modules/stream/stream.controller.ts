@@ -1,13 +1,16 @@
-import { Body, Controller, Post } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Post, Query, UnauthorizedException } from '@nestjs/common'
 
 import { SocketService } from '../socket/socket.service'
-import { WebhookStreamDto } from './dto/webhook-stream.dto'
+import { StreamAuthDto } from './dto/stream-auth.dto'
+import { StreamWebhookDto } from './dto/stream-webhook.dto'
 import { StreamService } from './stream.service'
 import { Public } from '~/common/decorators/public.decorator'
 import { PrismaService } from '~/prisma/prisma.service'
 
 @Controller('stream')
 export class StreamController {
+  private readonly logger = new Logger(StreamController.name)
+
   constructor(
     private readonly streamService: StreamService,
     private readonly socketService: SocketService,
@@ -15,11 +18,26 @@ export class StreamController {
   ) {}
 
   @Public()
-  @Post('webhook/stream-ready')
-  async streamReady(@Body() body: WebhookStreamDto) {
-    console.debug('streamReady', body)
+  @Post('webhook/auth')
+  async auth(@Body() body: StreamAuthDto) {
+    const channel = await this.prismaService.channel.findFirst({
+      where: { streamKey: body.token },
+      include: { user: { select: { username: true } } },
+    })
 
-    const streamKey = body.path.split('/')[1]
+    if (!channel || channel.user.username !== body.path || channel.streamKey !== body.token) {
+      throw new UnauthorizedException('Invalid stream key')
+    }
+
+    this.logger.log(`Successfully authenticated stream by user ${channel.id}`)
+
+    return true
+  }
+
+  @Public()
+  @Get('webhook/stream-connect')
+  async streamConnect(@Query() query: StreamWebhookDto) {
+    const streamKey = query.path.split('/')[1]
 
     const channel = await this.prismaService.channel.findFirst({
       where: { streamKey },
@@ -27,8 +45,7 @@ export class StreamController {
     })
 
     if (!channel) {
-      console.error('Channel not found', streamKey)
-      return
+      throw new UnauthorizedException('Invalid stream key')
     }
 
     await this.prismaService.channel.update({
@@ -36,15 +53,15 @@ export class StreamController {
       data: { isLive: true },
     })
 
+    this.logger.log(`Successfully connected stream by user ${channel.id}`)
+
     this.socketService.emitUsersChannelOnline(channel.id)
   }
 
   @Public()
-  @Post('webhook/stream-ended')
-  async streamEnded(@Body() body: WebhookStreamDto) {
-    console.debug('StreamEnded', body)
-
-    const streamKey = body.path.split('/')[1]
+  @Get('webhook/stream-disconnect')
+  async streamDisconnect(@Query() query: StreamWebhookDto) {
+    const streamKey = query.path.split('/')[1]
 
     const channel = await this.prismaService.channel.findFirst({
       where: { streamKey },
@@ -52,14 +69,15 @@ export class StreamController {
     })
 
     if (!channel) {
-      console.error('Channel not found', streamKey)
-      return
+      throw new UnauthorizedException('Invalid stream key')
     }
 
     await this.prismaService.channel.update({
       where: { id: channel.id },
       data: { isLive: false },
     })
+
+    this.logger.log(`Successfully disconnected stream by user ${channel.id}`)
 
     this.socketService.emitUsersChannelOffline(channel.id)
   }

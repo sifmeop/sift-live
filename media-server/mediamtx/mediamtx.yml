@@ -4,18 +4,10 @@ logDestinations: [stdout]
 readTimeout: 10s
 writeTimeout: 10s
 
-authMethod: internal
-authInternalUsers:
-  - user: any
-    pass:
-    ips: []
-    permissions:
-      - action: publish
-      - action: read
-      - action: playback
-      - action: api
-      - action: metrics
-      - action: pprof
+authMethod: http
+authHTTPAddress: http://host.docker.internal:5000/api/stream/webhook/auth
+authHTTPExclude:
+  - action: read
 
 api: yes
 apiAddress: :9997
@@ -27,7 +19,6 @@ rtmp: yes
 rtmpAddress: :1935
 
 srt: no
-rtmp: no
 webrtc: no
 moq: no
 rtsp: no
@@ -40,8 +31,8 @@ hlsVariant: lowLatency
 hlsSegmentCount: 7
 hlsSegmentDuration: 2s
 hlsPartDuration: 200ms
-hlsDirectory: /recordings/
 hlsMuxerCloseAfter: 60s
+hlsSegmentMaxSize: 50M
 
 pathDefaults:
   source: publisher
@@ -49,15 +40,12 @@ pathDefaults:
   maxReaders: 0
 
   record: yes
+  recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+  recordFormat: fmp4
+  recordPartDuration: 1s
+  recordSegmentDuration: 1h
 
 paths:
   all_others:
-    runOnReady: >
-      curl -X POST "${BACKEND_URL}/api/stream/webhook/stream-ready"
-      -H "Content-Type: application/json"
-      -d "event=stream_started&path=${MTX_PATH}"
-
-    runOnNotReady: >
-      curl -X POST "${BACKEND_URL}/api/stream/webhook/stream-ended" 
-      -H "Content-Type: application/json"
-      -d "event=stream_stopped&path=${MTX_PATH}"
+    runOnReady: curl "${BACKEND_URL}/api/stream/webhook/stream-connect?path=${MTX_PATH}&query=${MTX_QUERY}"
+    runOnNotReady: curl "${BACKEND_URL}/api/stream/webhook/stream-disconnect?path=${MTX_PATH}&query=${MTX_QUERY}"

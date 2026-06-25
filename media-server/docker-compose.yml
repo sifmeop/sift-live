@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
     ports:
       - "1935:1935" # RTMP
-      - "8888:8888" # HLS playback
+      - "8888:8888" # HLS
       - "9997:9997" # HTTP API
     volumes:
       - ./mediamtx/mediamtx.yml:/mediamtx.yml

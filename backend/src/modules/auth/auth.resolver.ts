@@ -66,6 +66,7 @@ export class AuthResolver {
     return true
   }
 
+  @Public()
   @UseGuards(RefreshTokenGuard)
   @Mutation(() => RefreshResponse)
   async refresh(
