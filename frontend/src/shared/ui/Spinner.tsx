@@ -22,7 +22,7 @@ export const Spinner = ({ className, variant = 'default', ...props }: SpinnerPro
 
   if (variant === 'full-absolute') {
     return (
-      <div className="bg-background absolute inset-0 flex items-center justify-center">
+      <div className="bg-background z-px absolute inset-0 flex items-center justify-center">
         {loader}
       </div>
     )
@@ -30,7 +30,7 @@ export const Spinner = ({ className, variant = 'default', ...props }: SpinnerPro
 
   if (variant === 'full-fixed') {
     return (
-      <div className="bg-background fixed inset-0 flex h-dvh items-center justify-center">
+      <div className="bg-background fixed inset-0 z-10 flex h-dvh items-center justify-center">
         {loader}
       </div>
     )

@@ -57,7 +57,7 @@ export const ChannelPage = ({ username }: ChannelPageProps) => {
   return (
     <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_360px]">
       <div className="flex flex-col gap-4 overflow-y-auto p-4">
-        <StreamPlayer isLive={channel.data.isLive} />
+        <StreamPlayer isLive={channel.data.isLive} chanelId={channel.data.id} username={username} />
         <ChannelHeader username={username} channel={channel.data} />
         <ChannelDescription username={username} channel={channel.data} />
         <div className="mt-2">
