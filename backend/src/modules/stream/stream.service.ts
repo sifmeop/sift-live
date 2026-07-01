@@ -6,7 +6,6 @@ import { SocketService } from '../socket/socket.service'
 import { RecordingReadyDto } from './dto/recording-ready.dto'
 import { Queue } from 'bullmq'
 import { EnvConfig } from '~/config/env.config'
-import { RedisService } from '~/modules/redis/redis.service'
 import { PrismaService } from '~/prisma/prisma.service'
 
 const QUEUE_NAME = 'stream-processing'
@@ -27,7 +26,6 @@ export class StreamService {
     private readonly prismaService: PrismaService,
     private readonly socketService: SocketService,
     private readonly configService: ConfigService<EnvConfig>,
-    private readonly redisService: RedisService,
     @InjectQueue(QUEUE_NAME) private readonly streamProcessingQueue: Queue<StreamProcessingJobData>,
   ) {}
 
@@ -83,8 +81,6 @@ export class StreamService {
       where: { id: channel.id },
       data: { isLive: false },
     })
-
-    await this.redisService.resetViewerCount(channel.id)
 
     this.logger.log(`Stream ended for channel: ${channel.id}`)
 

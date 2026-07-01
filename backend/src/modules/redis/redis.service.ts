@@ -4,7 +4,10 @@ import { ConfigService } from '@nestjs/config'
 import Redis from 'ioredis'
 import { EnvConfig } from '~/config/env.config'
 
-const VIEWER_COUNT_PREFIX = 'viewercount'
+const CHANNEL_VIEWERS_PREFIX = 'channel'
+const SOCKET_CHANNELS_PREFIX = 'socket'
+const VIEWERS_SUFFIX = 'viewers'
+const TTL_SECONDS = 60 * 60 * 24
 
 @Injectable()
 export class RedisService extends Redis {
@@ -12,34 +15,41 @@ export class RedisService extends Redis {
     super(configService.getOrThrow<string>('REDIS_URL'))
   }
 
-  async incrementViewerCount(channelId: string): Promise<number> {
-    const count = await this.incr(this.viewerCountKey(channelId))
-    await this.expire(this.viewerCountKey(channelId), 60 * 60 * 24)
-    return count
+  async addViewer(channelId: string, socketId: string): Promise<void> {
+    const key = this.channelViewersKey(channelId)
+
+    await this.pipeline().sadd(key, socketId).expire(key, TTL_SECONDS).exec()
   }
 
-  async decrementViewerCount(channelId: string): Promise<number> {
-    const key = this.viewerCountKey(channelId)
-    const count = await this.decr(key)
-
-    if (count <= 0) {
-      await this.del(key)
-      return 0
-    }
-
-    return count
+  async removeViewer(channelId: string, socketId: string): Promise<void> {
+    await this.srem(this.channelViewersKey(channelId), socketId)
   }
 
   async getViewerCount(channelId: string): Promise<number> {
-    const value = await this.get(this.viewerCountKey(channelId))
-    return value ? parseInt(value, 10) : 0
+    return this.scard(this.channelViewersKey(channelId))
   }
 
-  async resetViewerCount(channelId: string): Promise<void> {
-    await this.del(this.viewerCountKey(channelId))
+  async addSocketChannel(socketId: string, channelId: string): Promise<void> {
+    await this.sadd(this.socketChannelsKey(socketId), channelId)
   }
 
-  private viewerCountKey(channelId: string): string {
-    return `${VIEWER_COUNT_PREFIX}:${channelId}`
+  async removeSocketChannel(socketId: string, channelId: string): Promise<void> {
+    await this.srem(this.socketChannelsKey(socketId), channelId)
+  }
+
+  async getSocketChannels(socketId: string): Promise<string[]> {
+    return this.smembers(this.socketChannelsKey(socketId))
+  }
+
+  async deleteSocketMapping(socketId: string): Promise<void> {
+    await this.del(this.socketChannelsKey(socketId))
+  }
+
+  private channelViewersKey(channelId: string): string {
+    return `${CHANNEL_VIEWERS_PREFIX}:${channelId}:${VIEWERS_SUFFIX}`
+  }
+
+  private socketChannelsKey(socketId: string): string {
+    return `${SOCKET_CHANNELS_PREFIX}:${socketId}`
   }
 }

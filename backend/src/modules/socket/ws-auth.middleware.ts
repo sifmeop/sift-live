@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 
 import { type AppSocket } from './socket.types'
-import { randomUUID } from 'node:crypto'
+import { createId } from '@paralleldrive/cuid2'
 import { type ExtendedError } from 'socket.io'
 import { type AuthPayload } from '~/common/interfaces/auth-payload.interface'
 import { type EnvConfig } from '~/config/env.config'
@@ -18,7 +18,7 @@ export class WsAuthMiddleware {
   verify(socket: AppSocket, next: (err?: ExtendedError) => void): void {
     const token = socket.handshake.auth.token as string | undefined
 
-    socket.data.anonymousId = randomUUID()
+    socket.data.anonymousId = createId()
 
     if (!token || typeof token !== 'string') {
       socket.data.user = null

@@ -7,8 +7,6 @@ import { type Server } from 'socket.io'
 import { RedisService } from '~/modules/redis/redis.service'
 import { PrismaService } from '~/prisma/prisma.service'
 
-const USER_SOCKETS_PREFIX = 'user'
-
 @Injectable()
 export class SocketService {
   private server?: Server
@@ -22,37 +20,6 @@ export class SocketService {
     this.server = server
   }
 
-  async userConnected(
-    userId: string,
-    socketId: string,
-  ): Promise<{ count: number; isFirst: boolean }> {
-    await this.redisService.sadd(this.userSocketsKey(userId), socketId)
-    const count = await this.redisService.scard(this.userSocketsKey(userId))
-    const isFirst = count === 1
-
-    return { count, isFirst }
-  }
-
-  async cleanupChannelRooms(rooms: string[]): Promise<void> {
-    for (const room of rooms) {
-      if (room.startsWith('channel:')) {
-        const channelId = room.slice('channel:'.length)
-        await this.redisService.decrementViewerCount(channelId)
-      }
-    }
-  }
-
-  async userDisconnected(
-    userId: string,
-    socketId: string,
-  ): Promise<{ count: number; isLast: boolean }> {
-    await this.redisService.srem(this.userSocketsKey(userId), socketId)
-    const count = await this.redisService.scard(this.userSocketsKey(userId))
-    const isLast = count === 0
-
-    return { count, isLast }
-  }
-
   async channelSubscribe(socket: AppSocket, dto: ChannelSubscribeDto): Promise<void> {
     const channel = await this.prismaService.channel.findUnique({
       where: { id: dto.channelId },
@@ -60,24 +27,48 @@ export class SocketService {
     })
 
     if (!channel) {
+      socket.emit('channel:subscribed', { channelId: dto.channelId, ok: false })
       return
     }
 
-    socket.emit('channel:subscribed', { channelId: channel.id })
+    await this.redisService.addViewer(channel.id, socket.id)
+    await this.redisService.addSocketChannel(socket.id, channel.id)
 
     await socket.join(`channel:${channel.id}`)
-    await this.redisService.incrementViewerCount(channel.id)
+    socket.emit('channel:subscribed', { channelId: channel.id, ok: true })
   }
 
   async channelUnsubscribe(socket: AppSocket, dto: ChannelSubscribeDto): Promise<void> {
-    socket.emit('channel:unsubscribed', { channelId: dto.channelId })
+    await this.redisService.removeViewer(dto.channelId, socket.id)
+    await this.redisService.removeSocketChannel(socket.id, dto.channelId)
 
     await socket.leave(`channel:${dto.channelId}`)
-    await this.redisService.decrementViewerCount(dto.channelId)
+    socket.emit('channel:unsubscribed', { channelId: dto.channelId })
+  }
+
+  async cleanupDisconnect(socket: AppSocket): Promise<void> {
+    const channelIds = await this.redisService.getSocketChannels(socket.id)
+
+    if (channelIds.length === 0) {
+      return
+    }
+
+    for (const channelId of channelIds) {
+      await this.redisService.removeViewer(channelId, socket.id)
+    }
+
+    await this.redisService.deleteSocketMapping(socket.id)
   }
 
   async messageSend(socket: AppSocket, dto: MessageSendDto): Promise<void> {
-    const { sub: userId, username } = socket.data.user!
+    const user = socket.data.user
+
+    if (!user) {
+      socket.emit('error', { event: 'message:send', message: 'Authentication required' })
+      return
+    }
+
+    const { sub: userId, username } = user
 
     const channel = await this.prismaService.channel.findUnique({
       where: {
@@ -141,9 +132,5 @@ export class SocketService {
 
   emitToUser(userId: string, event: string, payload: unknown): void {
     this.server?.to(`user:${userId}`).emit(event, payload)
-  }
-
-  private userSocketsKey(userId: string): string {
-    return `${USER_SOCKETS_PREFIX}:${userId}:sockets`
   }
 }

@@ -1,5 +1,5 @@
 import { Outlet } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useIntlayer } from 'react-intlayer'
 
 import { useChannel } from '~/features/channel'
@@ -22,17 +22,19 @@ export const ChannelPage = ({ username }: ChannelPageProps) => {
 
   const channel = useChannel(username)
 
-  useEffect(() => {
-    if (!channel.data || !socket) return
+  const channelId = useMemo(() => channel.data?.id, [channel.data?.id])
 
-    socket.emit('channel:subscribe', { channelId: channel.data.id })
+  useEffect(() => {
+    if (!channelId || !socket) return
+
+    socket.emit('channel:subscribe', { channelId })
 
     return () => {
-      if (channel.data) {
-        socket.emit('channel:unsubscribe', { channelId: channel.data.id })
+      if (channelId && socket) {
+        socket.emit('channel:unsubscribe', { channelId })
       }
     }
-  }, [channel, socket])
+  }, [channelId, socket])
 
   if (channel.error) {
     return (

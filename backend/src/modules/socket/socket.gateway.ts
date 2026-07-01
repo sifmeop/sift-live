@@ -36,34 +36,28 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     socket.emit('auth:connected')
 
     if (user) {
-      const { isFirst } = await this.socketService.userConnected(user.sub, socket.id)
-
       await socket.join(`user:${user.sub}`)
-
-      this.logger.log(
-        `auth user ${user.sub} connected (socket ${socket.id})${isFirst ? ' [first]' : ''}`,
-      )
+      this.logger.log(`auth user ${user.sub} connected (socket ${socket.id})`)
     } else {
       this.logger.log(`anonymous ${socket.data.anonymousId} connected (socket ${socket.id})`)
     }
 
     socket.on('disconnecting', async () => {
-      const activeRooms = Array.from(socket.rooms)
-      const joinedRooms = activeRooms.filter((room) => room !== socket.id)
-
-      await this.socketService.cleanupChannelRooms(joinedRooms)
+      try {
+        await this.socketService.cleanupDisconnect(socket)
+      } catch (err) {
+        this.logger.error(
+          `Failed to cleanup socket ${socket.id} on disconnecting: ${(err as Error).message}`,
+        )
+      }
     })
   }
 
-  async handleDisconnect(socket: AppSocket): Promise<void> {
+  handleDisconnect(socket: AppSocket): void {
     const user = socket.data.user
 
     if (user) {
-      const { isLast } = await this.socketService.userDisconnected(user.sub, socket.id)
-
-      this.logger.log(
-        `auth user ${user.sub} disconnected (socket ${socket.id})${isLast ? ' [last]' : ''}`,
-      )
+      this.logger.log(`auth user ${user.sub} disconnected (socket ${socket.id})`)
     } else {
       this.logger.log(`anonymous ${socket.data.anonymousId} disconnected (socket ${socket.id})`)
     }
